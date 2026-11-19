@@ -4,12 +4,14 @@ using Aegis
 using Test
 using TOML
 
+include("quantities_integration.jl")
+
 const REAL_RUNS = [
-    (directory="3D_Athena/128_eta5e-3", grid=(128, 128, 128), quantity="ohmic_heating",
+    (directory="3D_Athena/128_eta5e-3", closure=:adiabatic, grid=(128, 128, 128), quantity="ohmic_heating",
      parameter=0.005, custom_history="Mean Ms", column=14, lasttime=10.0),
-    (directory="3D_Athena/256_eta5e-3", grid=(256, 256, 256), quantity="ohmic_heating",
+    (directory="3D_Athena/256_eta5e-3", closure=:adiabatic, grid=(256, 256, 256), quantity="ohmic_heating",
      parameter=0.005, custom_history="Mean Ms", column=14, lasttime=10.0),
-    (directory="2D_MHD_PIC/run424", grid=(1024, 4096, 1), quantity="vel1",
+    (directory="2D_MHD_PIC/run424", closure=:isothermal, grid=(1024, 4096, 1), quantity="vel1",
      parameter=0.0, custom_history="Pideal_y", column=29, lasttime=600.0),
 ]
 
@@ -47,6 +49,7 @@ function check_run(parent, case)
     ref = TOML.parse(read(cmd, String))
 
     open_snapshot(record.path) do s
+        check_private_quantities(s, input, ref, case.closure)
         @test s.rootsize == case.grid
         @test collect(s.blocksize) == ref["blocksize"]
         @test (s.time, s.cycle) == (ref["time"], ref["cycle"])

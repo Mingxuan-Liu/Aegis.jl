@@ -6,7 +6,7 @@ Begin with the MHD analysis needed across multiple projects. Particle analysis, 
 
 The first milestone is a complete, documented workflow that reads a run's history and selected mesh data, interprets the fields correctly, computes volume integrals and weighted statistics, produces a basic slice or projection, and saves results with provenance. It must work within a stated memory budget and have an independently validated serial path plus one measured parallel path.
 
-**Current status.** Items 1–4 are implemented for the supported native output layouts and complete, unrefined Cartesian reductions. The public example and tests run on generated data, and the integration suite covers the two MHD runs and the fluid output of the MHD-PIC run. Item 5, fundamental derived MHD quantities, is next. The slice, projection and export portions of the first milestone are scheduled under item 6. [User guide](README.md) · [Input contract](docs/input-contract.md) · [Benchmark](docs/performance.md)
+**Current status.** Items 1–9 have implementations for the input classes described in the user guide. The end-to-end example uses Newtonian fluid quantities, a mass-weighted distribution, and a slice. Geometry-aware products and reconstructed derivatives support complete level-zero Cartesian meshes. Global 3D spectra require a uniform periodic lattice. For the magnetic spectrum comparison, matching final snapshots are available at 128³, 256³ and 512³. The two higher-resolution reference curves have archived shell data only. [User guide](README.md) · [Scientific input contract](docs/input-contract.md) · [Workflow and scaling](docs/workflow.md) · [Spectrum reproduction](validation/spectra/README.md)
 
 ## Priority 1 — Establish the data contract and a working foundation
 

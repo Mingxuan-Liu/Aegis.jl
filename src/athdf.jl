@@ -205,6 +205,18 @@ function _checkblock(s, b)
     1 <= b <= s.nblocks || throw(ArgumentError("block $b outside 1:$(s.nblocks)"))
 end
 
+function _slab_indices(s::Snapshot, ranges)
+    ranges isa Tuple && length(ranges) == 3 ||
+        throw(ArgumentError("ranges must be a tuple of three contiguous cell-index ranges"))
+    return ntuple(3) do d
+        r = ranges[d]
+        r isa AbstractUnitRange{<:Integer} && !isempty(r) && first(r) >= 1 && last(r) <= s.blocksize[d] ||
+            throw(ArgumentError("range $r must select cells within 1:$(s.blocksize[d]) on axis $d"))
+        # HDF5.jl hyperslabs use native Int indices; bounds were checked before narrowing.
+        Int(first(r)):Int(last(r))
+    end
+end
+
 """
     read_field(snapshot, selector, block; ranges=...)
 
@@ -218,15 +230,7 @@ function read_field(s::Snapshot, selector, block::Integer;
                     ranges=ntuple(d -> 1:s.blocksize[d], 3))
     _checkblock(s, block)
     ref = resolve_field(s, selector)
-    ranges isa Tuple && length(ranges) == 3 ||
-        throw(ArgumentError("ranges must be a tuple of three contiguous cell-index ranges"))
-    indices = ntuple(3) do d
-        r = ranges[d]
-        r isa AbstractUnitRange{<:Integer} && !isempty(r) && first(r) >= 1 && last(r) <= s.blocksize[d] ||
-            throw(ArgumentError("range $r must select cells within 1:$(s.blocksize[d]) on axis $d"))
-        # HDF5.jl hyperslabs use native Int indices; bounds were checked before narrowing.
-        Int(first(r)):Int(last(r))
-    end
+    indices = _slab_indices(s, ranges)
     # HDF5.jl reverses C axis order to accommodate Julia's column-major layout.
     return s.datasets[ref.dataset][indices..., Int(block), ref.index]
 end
