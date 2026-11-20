@@ -1,6 +1,6 @@
 # Aegis.jl
 
-Aegis is a Julia package for analyzing the fluid in Athena++ MHD and MHD-PIC simulations. Use it to compute Newtonian energies, weighted distributions, slices and projections on native Cartesian cells. It can also reconstruct gradients across MeshBlocks and measure three-dimensional Fourier spectra on uniform periodic grids.
+Aegis is a Julia package for analyzing the fluid in Athena++ MHD and MHD-PIC simulations. On native Cartesian cells it measures Newtonian energies and magnetic fluctuations, or fluid Lorentz factors, lab velocities and comoving magnetic pressure from declared special-relativistic primitives. It also computes weighted distributions, slices, projections, gradients across MeshBlocks, and Fourier spectra on uniform periodic grids.
 
 ## Analyze a run
 
@@ -22,7 +22,7 @@ The example analyzes an uneven two-block grid in shuffled storage order. From th
 To analyze your own Newtonian primitive output, replace `--demo` with the run directory. The optional final argument selects a stored field for the slice. The following example uses a column produced by the filament-heating problem generator.
 
 ```sh
-julia --threads=4 --project=. examples/mhd_workflow.jl test/test_data/3D_Athena/128_eta5e-3 /tmp/aegis-filament-demo ohmic_heating
+julia --threads=4 --project=. examples/mhd_workflow.jl /path/to/your/run /tmp/aegis-filament-demo ohmic_heating
 ```
 
 The workflow selects the latest unambiguous state of a single stream and can operate on mesh files alone. Its Julia entry point accepts a stream, region, density-bin edges and slice position. [Workflow and measured scaling](docs/workflow.md)
@@ -32,9 +32,14 @@ The workflow selects the latest unambiguous state of a single stream and can ope
 | Scientific question | Julia interface and assumptions |
 | --- | --- |
 | How much magnetic or kinetic energy is in a region? | Pass a `quantity` from a declared `NewtonianMHD` model to `summarize`. Thermodynamic quantities require an appropriate EOS and physical scales where applicable. [Quantities](docs/quantities.md) |
+| How much magnetic fluctuation energy is transverse to a guide field? | Use `magnetic_fluctuation` with the reference magnetic field and projection direction from your experiment. [Guide-field energies](docs/fluctuations.md) |
+| What ideal electric field does the moving gas imply? | Combine cell-centered velocity and magnetic components with `cell_map` to reconstruct the signed motional field. [Worked example and units](docs/quantities.md#what-motional-electric-field-does-the-gas-imply) |
+| How fast is an SR fluid moving, and what magnetic pressure does it see? | Use `quantity` with `SpecialRelativisticMHD()` on verified flat-spacetime Cartesian primitives. The guide includes an actual Athena++ writer output with a hand-checkable answer. [Relativistic primitives](docs/relativity.md) |
 | How does mass or volume depend on one or two fields? | `distribution` and `conditional_stats` accept native, derived, or caller-defined fields. `slice_plane` and `project` use physical cell lengths. [Distributions and spatial products](docs/products.md) |
 | What is the vorticity across a MeshBlock boundary? | Build a `DifferentialGrid` with explicit domain boundary rules, then read the components returned by `curl`. [Differential operators](docs/differentials.md) |
 | How are magnetic and kinetic energy distributed over spatial scales? | Call `shell_spectrum` on the three cell-centered magnetic components, or on the three Newtonian velocity components with `density="rho"`. Both require a uniform periodic 3D Cartesian grid and report energy per shell and per unit angular wavenumber. [Spectra](docs/spectra.md) |
+
+Run `julia --project=. examples/periodic_spectra.jl` to reproduce both spectra on the same sinusoidal wave. Each spectrum has one unit of energy density in the shell containing the fundamental mode. The guide shows how to plot the compensated spectral density $k^{5/3} M(k)$.
 
 ## Inspect individual inputs and cells
 
@@ -98,7 +103,7 @@ Region bounds are lower-inclusive and upper-exclusive in each coordinate. Each s
 
 The [input contract](docs/input-contract.md) describes the inspected writers, the two observed layouts, physical conventions, support limits and the three supplied runs. The [performance notes](docs/performance.md) give benchmark commands and memory measurements.
 
-Run the public tests from any checkout. They generate their own inputs locally.
+Run the public tests from any checkout. They use manufactured fields and a small [pair of primitive and conserved files](test/sr_writer/) from the pinned SR solver.
 
 ```sh
 julia --threads=4 --project=. -e 'using Pkg; Pkg.test()'

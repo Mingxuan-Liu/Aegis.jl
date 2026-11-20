@@ -44,7 +44,7 @@ struct NewtonianMHD{E}
     end
 end
 
-struct NewtonianQuantity{M,I,F}
+struct MHDQuantity{M,I,F,S}
     path::String
     name::String
     units::String
@@ -52,6 +52,8 @@ struct NewtonianQuantity{M,I,F}
     model::M
     inputs::I
     kernel::F
+    source::Symbol
+    selectors::S
 end
 
 @inline function _gas_density(x)
@@ -164,45 +166,51 @@ function quantity(s::Snapshot, model::NewtonianMHD, name::Symbol; density="rho",
     v, b = Tuple(velocity), Tuple(magnetic)
     length(v) == 3 && length(b) == 3 || throw(ArgumentError("supply three Cartesian selectors for each vector"))
     selectors, kernel, units = _mhd_recipe(name, model, density, pressure, v, b)
-    inputs = map(selectors) do field
-        ref = resolve_field(s, field)
-        ref isa FieldRef && ref.centering === :cell ||
-            throw(ArgumentError("$name requires stored cell-centered primitive inputs; check selector $field"))
-        ref
-    end
-    NewtonianQuantity(s.path, String(name), units, :cell, model, inputs, kernel)
+    inputs = map(field -> _mhd_input(s, field, name), selectors)
+    MHDQuantity(s.path, String(name), units, :cell, model, inputs, kernel, :reconstructed, selectors)
 end
 
 function quantity(::Snapshot, model, ::Symbol; kwargs...)
-    throw(ArgumentError("unsupported gas model $(typeof(model)); provide NewtonianMHD(...) only for Newtonian fluid primitives"))
+    throw(ArgumentError("unsupported gas model $(typeof(model)); declare NewtonianMHD or SpecialRelativisticMHD for the verified fluid primitives"))
 end
 
-function resolve_field(s::Snapshot, q::NewtonianQuantity)
+function _mhd_input(s, field, name)
+    ref = resolve_field(s, field)
+    ref isa FieldRef && ref.centering === :cell ||
+        throw(ArgumentError("$name requires stored cell-centered inputs; check selector $field"))
+    return ref
+end
+
+const NewtonianQuantity = MHDQuantity{M} where {M<:NewtonianMHD}
+
+function resolve_field(s::Snapshot, q::MHDQuantity)
     q.path == s.path || throw(ArgumentError("derived field belongs to a different snapshot path"))
     foreach(ref -> resolve_field(s,ref), q.inputs)
     q
 end
 
 @inline function _mhd_value(kernel::F, xs::Vararg{Any,N}) where {F,N}
-    all(isfinite, xs) || throw(DomainError(xs, "nonfinite primitive in Newtonian gas diagnostic"))
+    all(isfinite, xs) || throw(DomainError(xs, "nonfinite input to local MHD diagnostic"))
     y = kernel(map(Float64,xs)...)
-    isfinite(y) || throw(DomainError(y, "Newtonian diagnostic exceeded Float64 range"))
+    isfinite(y) || throw(DomainError(y, "local MHD diagnostic exceeded Float64 range"))
     y
 end
 
 # HDF5 hyperslabs acquire their native element types at runtime. Cross this
 # function barrier once per block, so Julia specializes the inner loop for the
 # kernel and concrete input-array tuple, including mixed Float32/64 inputs.
-function _mhd_slab(kernel::F, arrays::Tuple) where F
+function _cell_slab(evaluate::E, kernel::F, arrays::Tuple) where {E,F}
+    shape = axes(first(arrays))
+    all(a -> axes(a) == shape, arrays) || throw(DimensionMismatch("cell fields must cover the same slab"))
     values = Array{Float64}(undef, size(first(arrays)))
     for i in eachindex(values)
         samples = map(a -> @inbounds(a[i]), arrays)
-        @inbounds values[i] = _mhd_value(kernel, samples...)
+        @inbounds values[i] = evaluate(kernel, samples...)
     end
     return values
 end
 
-function read_field(s::Snapshot, q::NewtonianQuantity, block::Integer;
+function read_field(s::Snapshot, q::MHDQuantity, block::Integer;
                     ranges=ntuple(d -> 1:s.blocksize[d], 3))
     _checkblock(s, block)
     resolve_field(s,q)
@@ -211,5 +219,5 @@ function read_field(s::Snapshot, q::NewtonianQuantity, block::Integer;
         return fill(_mhd_value(q.kernel),shape)
     end
     arrays = map(ref -> read_field(s,ref,block; ranges),q.inputs)
-    return _mhd_slab(q.kernel, arrays)
+    return _cell_slab(_mhd_value, q.kernel, arrays)
 end

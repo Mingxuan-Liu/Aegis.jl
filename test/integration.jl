@@ -5,6 +5,7 @@ using Test
 using TOML
 
 include("quantities_integration.jl")
+include("fluctuations_integration.jl")
 
 const REAL_RUNS = [
     (directory="3D_Athena/128_eta5e-3", closure=:adiabatic, grid=(128, 128, 128), quantity="ohmic_heating",
@@ -50,6 +51,7 @@ function check_run(parent, case)
 
     open_snapshot(record.path) do s
         check_private_quantities(s, input, ref, case.closure)
+        check_private_fluctuations(s, ref)
         @test s.rootsize == case.grid
         @test collect(s.blocksize) == ref["blocksize"]
         @test (s.time, s.cycle) == (ref["time"], ref["cycle"])
