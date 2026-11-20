@@ -1,6 +1,6 @@
 # Three-dimensional shell spectra
 
-`shell_spectrum` measures the isotropic Fourier spectrum of a complete, uniformly sampled periodic box. Magnetic energy in Athena++ Newtonian code units is $|\mathbf B|^2/2$. Pass the three cell-centered components from the same snapshot. Confirm the physical boundary conditions from the run configuration. The regular sampling test uses the faces and midpoints saved in the snapshot. [Stone et al. (2020), §3.1](https://doi.org/10.3847/1538-4365/ab929b)
+`shell_spectrum` groups the Fourier energy of a complete, uniformly sampled periodic box into spherical shells. Each shell combines all wavevector directions at a given range of scales, including when the fluctuations are anisotropic. Magnetic energy in Athena++ Newtonian code units is $|\mathbf B|^2/2$. Pass the three cell-centered components from the same snapshot. Confirm the physical boundary conditions from the run configuration. The regular sampling test uses the faces and midpoints saved in the snapshot. [Stone et al. (2020), §3.1](https://doi.org/10.3847/1538-4365/ab929b)
 
 ```julia
 open_snapshot(path) do s
@@ -30,7 +30,7 @@ The caller must establish a common unit and physical frame for the components $a
 | `real_energy`, `excluded_energy` | Independent real-space half squared norm per cell of the transformed fields and the summed energy of non-DC modes outside the edges. |
 | `provenance` | Snapshot path/time/cycle, field and optional density identities, grid dimensions and lengths, periodicity declaration, FFT thread count and workspace estimate. |
 
-For components with unit $U$, shell totals and real-space energy have units $U^2$. A density per angular wavenumber has units $U^2$ times code length. For density-weighted components both expressions gain a factor of density units. The magnetic reference figure excludes DC from the displayed shells while retaining the original field for the transform.
+For components with unit $U$, shell totals and real-space energy have units $U^2$. A density per angular wavenumber has units $U^2$ times code length. For density-weighted components both expressions gain a factor of density units. The positive-wavenumber shells exclude DC even when the original field is retained for the transform.
 
 The array is assembled by logical block location with physical $x_1$ varying fastest. The global real transform compresses the first Julia dimension. For the full shell power, an interior positive $k_1$ plane carries weight two. The $k_1=0$ plane and the even-length $k_1$ Nyquist plane carry weight one, because those planes retain all $k_2,k_3$. For odd $N_1$ the largest positive $k_1$ also carries weight two. Each mode's normalized squared modulus is accumulated with a compensated shell sum. With all modes accounted for, $\sum_j M_j\Delta k_j + E_{\mathrm{DC}} + E_{\mathrm{excluded}} = E_{\mathrm{real}}$ to rounding precision. [FFTW reference, §4.8.6](https://www.fftw.org/fftw3_doc/Multi_002ddimensional-Transforms.html) · [AbstractFFTs real transforms](https://juliamath.github.io/AbstractFFTs.jl/stable/api/)
 
@@ -50,4 +50,4 @@ The transform is global. One Float64 grid, one ComplexF64 half-grid and one FFTW
 | $1024^3$ | 24.02 GiB |
 | $2048^3$ | 192.06 GiB |
 
-The tests compare against a full direct complex DFT on odd/even, oblique, unequal-length and non-cubic lattices, with known amplitudes for interior, DC and Nyquist modes. The [magnetic spectrum comparison](../validation/spectra/) uses the supplied filament-heating outputs.
+The tests compare against a full direct complex DFT on odd/even, oblique, unequal-length and non-cubic lattices, with known amplitudes for interior, DC and Nyquist modes. The [spectral tests](../test/spectra.jl) generate their own fixtures.
