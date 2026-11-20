@@ -34,7 +34,7 @@ The workflow selects the latest unambiguous state of a single stream and can ope
 | How much magnetic or kinetic energy is in a region? | Pass a `quantity` from a declared `NewtonianMHD` model to `summarize`. Thermodynamic quantities require an appropriate EOS and physical scales where applicable. [Quantities](docs/quantities.md) |
 | How does mass or volume depend on one or two fields? | `distribution` and `conditional_stats` accept native, derived, or caller-defined fields. `slice_plane` and `project` use physical cell lengths. [Distributions and spatial products](docs/products.md) |
 | What is the vorticity across a MeshBlock boundary? | Build a `DifferentialGrid` with explicit domain boundary rules, then read the components returned by `curl`. [Differential operators](docs/differentials.md) |
-| How is magnetic energy distributed over spatial scales? | `shell_spectrum` takes three cell-centered magnetic fields and confirmed periodic boundaries. It reports energy per shell and per unit angular wavenumber, including a real-space normalization check. [Spectra](docs/spectra.md) · [Final-snapshot figure comparison](validation/spectra/README.md) |
+| How are magnetic and kinetic energy distributed over spatial scales? | Call `shell_spectrum` on the three cell-centered magnetic components, or on the three Newtonian velocity components with `density="rho"`. Both require a uniform periodic 3D Cartesian grid and report energy per shell and per unit angular wavenumber. [Spectra](docs/spectra.md) |
 
 ## Inspect individual inputs and cells
 
@@ -96,7 +96,7 @@ Region bounds are lower-inclusive and upper-exclusive in each coordinate. Each s
 
 ## Scientific conventions and validation
 
-The [input contract](docs/input-contract.md) describes the inspected writers, the two observed layouts, physical conventions, support limits and the three supplied runs. The [performance notes](docs/performance.md) give benchmark commands and memory measurements. See [the roadmap](MHD_ROADMAP.md) for later priorities.
+The [input contract](docs/input-contract.md) describes the inspected writers, the two observed layouts, physical conventions, support limits and the three supplied runs. The [performance notes](docs/performance.md) give benchmark commands and memory measurements.
 
 Run the public tests from any checkout. They generate their own inputs locally.
 

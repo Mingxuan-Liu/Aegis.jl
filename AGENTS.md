@@ -4,7 +4,7 @@
 
 Aegis.jl is a Julia package for reusable, scalable, physically reliable analysis of Athena++ MHD-PIC simulations. Its scientific components should serve multiple investigations and remain understandable to researchers who did not write them.
 
-These instructions apply to human and agent contributors throughout the repository. Keep them focused on enduring development principles. Maintain current priorities, milestones, and temporary scope decisions in a separate roadmap.
+These instructions apply to human and agent contributors throughout the repository. Keep them focused on enduring development principles.
 
 ## 1. Three requirements for every contribution
 
