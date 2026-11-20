@@ -1,6 +1,6 @@
 # Native distributions and spatial products
 
-These operations use the same verified Cartesian mesh and half-open center selection as `summarize`. They accept stored fields, user-labelled fields, Newtonian quantities, and scalar expressions defined with `cell_map`. A region contributes whole native cells with their stored face widths. Code lengths, volumes and fields refer to the snapshot frame and the units described in the [input contract](input-contract.md).
+These operations use the same verified Cartesian mesh and half-open center selection as `summarize`. They accept stored fields, user-labelled fields, model-specific fluid quantities, guide-field fluctuation energies, and scalar expressions defined with `cell_map`. A region contributes whole native cells with their stored face widths. Code lengths, volumes and fields refer to the snapshot frame and the units described in the [input contract](input-contract.md).
 
 ## Binning with a specified measure
 

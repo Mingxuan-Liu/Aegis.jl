@@ -1,0 +1,67 @@
+<job>
+problem_id = oblique
+
+<output1>
+file_type = hdf5
+variable = prim
+id = prim
+xdmf = 0
+dt = 1.0
+
+<output2>
+file_type = hdf5
+variable = cons
+id = cons
+xdmf = 0
+dt = 1.0
+
+<mesh>
+nx1 = 8
+x1min = -0.5
+x1max = 0.5
+ix1_bc = periodic
+ox1_bc = periodic
+nx2 = 1
+x2min = -0.5
+x2max = 0.5
+ix2_bc = periodic
+ox2_bc = periodic
+nx3 = 1
+x3min = -0.5
+x3max = 0.5
+ix3_bc = periodic
+ox3_bc = periodic
+
+<meshblock>
+nx1 = 4
+nx2 = 1
+nx3 = 1
+
+<time>
+cfl_number = 0.4
+nlim = 0
+tlim = 0.0
+
+<hydro>
+gamma = 1.3333333333333333
+
+<problem>
+# Both sides are the same. Input velocities here are lab three-velocities.
+shock_dir = 1
+xshock = 0
+dl = 4
+pl = 1
+ul = 0.36
+vl = 0.48
+wl = 0
+bxl = 3
+byl = 4
+bzl = 5
+dr = 4
+pr = 1
+ur = 0.36
+vr = 0.48
+wr = 0
+bxr = 3
+byr = 4
+bzr = 5

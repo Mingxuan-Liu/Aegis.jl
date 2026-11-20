@@ -31,3 +31,24 @@ open_snapshot(snapshot_path) do s
     read_field(s, cs, 1; ranges=(1:1, 1:1, 1:1))
 end
 ```
+
+## What motional electric field does the gas imply?
+
+From a Julia session launched with `--project=.` at the repository root, this recipe measures the $x_1$ component of the ideal motional field on the public workflow grid.
+
+```julia
+using Aegis
+include("examples/mhd_workflow.jl")
+mktempdir() do dir
+    open_snapshot(MHDWorkflowExample.write_demo(dir)) do s
+        cE1 = cell_map((v2, v3, b2, b3) -> v3*b2 - v2*b3, s,
+                       "vel2", "vel3", "Bcc2", "Bcc3";
+                       name="cE_motional_1", units="code velocity × code magnetic field")
+        extrema(read_field(s, cE1, 1))  # (-8.0, -8.0)
+    end
+end
+```
+
+In the simulation frame the ideal induction equation gives $c\mathbf E_{\mathrm{mot}}=-\mathbf v_{\mathrm{gas}}\times\mathbf B$. Each native cell contributes $(cE_{\mathrm{mot}})_1=v_3 B_2-v_2 B_3$, evaluated from the stored cell-centered Newtonian velocities and magnetic components. The other components follow by cyclic permutation. The example has $\mathbf v=(3,4,0)$ and $\mathbf B=(0,0,2)$, so $c\mathbf E_{\mathrm{mot}}=(-8,6,0)$. Parallel fields give zero. This product has no weights, stencils or boundary inputs. In Gaussian CGS, multiply the code result by the gas velocity unit in cm/s and magnetic field unit in gauss, then divide by the physical speed of light in cm/s to obtain statvolt/cm. [Sun & Bai (2023), §2.2, Eq. (6)](https://arxiv.org/html/2304.10568v1#S2.SS2)
+
+This reconstruction uses the product of the saved samples. An in-situ average of the product or a constrained-transport edge electromotive force can differ. Additional terms such as resistivity or a CR-induced Hall field require separate inputs. If the run saved the quantity of interest, inspect its definition and sampling in the problem generator and supply its field selector directly to the analysis.

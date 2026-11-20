@@ -34,11 +34,16 @@ function resolve_field(s::Snapshot, m::CellMap)
     m
 end
 
+# Custom maps decide their own domain (for example, a map can handle NaN).
+@inline function _cell_map_value(f::F, xs::Vararg{Any,N}) where {F,N}
+    Float64(f(map(Float64, xs)...))
+end
+
 function read_field(s::Snapshot, m::CellMap, block::Integer;
                     ranges=ntuple(d -> 1:s.blocksize[d], 3))
     resolve_field(s, m)
     arrays = _product_slabs(s, m.inputs, block, ranges)
-    map((args...) -> Float64(m.f(map(Float64, args)...)), arrays...)
+    _cell_slab(_cell_map_value, m.f, arrays)
 end
 
 function _product_ref(s, selector)
